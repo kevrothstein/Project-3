@@ -61,33 +61,36 @@ except:
 def get_user_tweets(users):
 	tweets = api.user_timeline(users)
 	for kevin in tweets:
-		if kevin['id'] not in CACHE_DICTION:	# if tweet has not already been cached
+		if kevin['id'] not in CACHE_DICTION:	# check to see if tweet has not already been cached
 			CACHE_DICTION[kevin['id']] = [kevin['user']['id'], kevin['user']['screen_name'], kevin['created_at'], kevin['text'], kevin['retweet_count'], kevin['entities']['user_mentions'], kevin['user']['favourites_count'], kevin['user']['description']]
-	file = open(CACHE_FNAME, "w")	# add new tweet to local CACHE_DICTION and write to cache file
+	
+	file = open(CACHE_FNAME, "w")	# adding tweet to local CACHE_DICTION then write to cache the file
 	file.write(json.dumps(CACHE_DICTION))  # write cache dictionary to file
 	file.close()
 	# must declare cur and conn before this function is called
 	# below lines insert newly cached data into tables Users and Tweets
 	
 
-	for tweet in CACHE_DICTION:
-		cur.execute('SELECT * from Users WHERE user_id=?', (str(CACHE_DICTION[tweet][0]),))	# make sure user is not already in Users
+	for kevin in CACHE_DICTION:
+		cur.execute('SELECT * from Users WHERE user_id=?', (str(CACHE_DICTION[kevin][0]),))	# make sure user is not already in Users
 		if not cur.fetchone():
-			cur.execute('INSERT INTO Users(user_id, screen_name, num_favs, description) VALUES(?, ?, ?, ?)', (CACHE_DICTION[tweet][0], CACHE_DICTION[tweet][1], CACHE_DICTION[tweet][6], CACHE_DICTION[tweet][7]))
-		user_mentions = CACHE_DICTION[tweet][5]	# insert posted user and all its columns
-		for i in range(len(user_mentions)):	# insert each user mentioned in tweets if they are not already in Users
-			cur.execute('SELECT * from Users WHERE user_id=?', (str(user_mentions[i]['id']),))
+			cur.execute('INSERT INTO Users(user_id, screen_name, num_favs, description) VALUES(?, ?, ?, ?)', (CACHE_DICTION[kevin][0], CACHE_DICTION[kevin][1], CACHE_DICTION[kevin][6], CACHE_DICTION[kevin][7]))
+		user_mentions = CACHE_DICTION[kevin][5]	# insert posted user and all its columns
+		for cheese in range(len(user_mentions)):	# insert each user mentioned in tweets if they are not already in Users
+			cur.execute('SELECT * from Users WHERE user_id=?', (str(user_mentions[cheese]['id']),))
 			if not cur.fetchone():
-				cur.execute('INSERT INTO Users(user_id, screen_name, num_favs, description) VALUES(?, ?, ?, ?)', (user_mentions[i]['id'], user_mentions[i]['screen_name'], CACHE_DICTION[tweet][6], CACHE_DICTION[tweet][7]))
-	for tweet in CACHE_DICTION:
-		cur.execute('SELECT * from Tweets WHERE tweet_id=?', (str(tweet),))	# if tweet not in Tweets
+				cur.execute('INSERT INTO Users(user_id, screen_name, num_favs, description) VALUES(?, ?, ?, ?)', (user_mentions[cheese]['id'], user_mentions[cheese]['screen_name'], CACHE_DICTION[kevin][6], CACHE_DICTION[kevin][7]))
+	
+	for kevin in CACHE_DICTION:
+		cur.execute('SELECT * from Tweets WHERE tweet_id=?', (str(kevin),))	# if tweet not in Tweets
 		if not cur.fetchone():
-			cur.execute('INSERT INTO Tweets(tweet_id, tweet_text, user_posted, time_posted, retweets) VALUES(?, ?, ?, ?, ?)', (tweet, CACHE_DICTION[tweet][3], CACHE_DICTION[tweet][0], CACHE_DICTION[tweet][2], CACHE_DICTION[tweet][4])) 
+			cur.execute('INSERT INTO Tweets(tweet_id, tweet_text, user_posted, time_posted, retweets) VALUES(?, ?, ?, ?, ?)', (kevin, CACHE_DICTION[kevin][3], CACHE_DICTION[kevin][0], CACHE_DICTION[kevin][2], CACHE_DICTION[kevin][4])) 
 	conn.commit()	# insert new tweet and its columns into Tweets and commit changes to database
-	l = []
-	for k in CACHE_DICTION.keys():	# make CACHE_DICTION a list and return
-		l.append({k:CACHE_DICTION[k]})
-	return l
+	
+	lst = []
+	for cheese in CACHE_DICTION.keys():	# make CACHE_DICTION a list and return
+		lst.append({cheese:CACHE_DICTION[cheese]})
+	return lst
 
 
 
@@ -137,15 +140,19 @@ umich_tweets = get_user_tweets('umich')
 # Make a query to select all of the records in the Users database. 
 # Save the list of tuples in a variable called users_info.
 
-users_info = []
+info = []
 cur.execute("SELECT * from Users")
 for kevin in cur:
-	users_info.append(kevin)
+	info.append(kevin)
 # Make a query to select all of the user screen names from the database. 
 # Save a resulting list of strings (NOT tuples, the strings inside them!) 
 # in the variable screen_names. HINT: a list comprehension will make 
 # this easier to complete! 
-screen_names = True
+
+retweets = []
+cur.execute("SELECT * from Tweets WHERE retweets>10")
+for item in cur:
+	retweets.append(item)
 
 
 # Make a query to select all of the tweets (full rows of tweet information)
